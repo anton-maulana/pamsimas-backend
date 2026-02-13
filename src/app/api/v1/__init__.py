@@ -1,8 +1,11 @@
 from fastapi import APIRouter
 
+from .bills import router as bills_router
+from .customers import router as customers_router
 from .health import router as health_router
 from .login import router as login_router
 from .logout import router as logout_router
+from .payments import router as payments_router
 from .posts import router as posts_router
 from .rate_limits import router as rate_limits_router
 from .tasks import router as tasks_router
@@ -18,3 +21,6 @@ router.include_router(posts_router)
 router.include_router(tasks_router)
 router.include_router(tiers_router)
 router.include_router(rate_limits_router)
+router.include_router(customers_router)
+router.include_router(bills_router)
+router.include_router(payments_router)
