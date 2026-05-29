@@ -1,8 +1,11 @@
 from fastapi import APIRouter
 
+from .bills import router as bills_router
+from .customers import router as customers_router
 from .health import router as health_router
 from .login import router as login_router
 from .logout import router as logout_router
+from .payments import router as payments_router
 from .posts import router as posts_router
 from .rate_limits import router as rate_limits_router
 from .tasks import router as tasks_router
