@@ -1,0 +1,100 @@
+[
+  {
+    "protocol": "http",
+    "type": "pillar",
+    "label": "用于在线的IDE业务开发调试",
+    "address": "http://localhost:64323",
+    "startTime": 1778039116521
+  },
+  {
+    "protocol": "websocket",
+    "type": "pillar",
+    "label": "用于在线的IDE业务开发调试",
+    "address": "http://localhost:64323/socketjs",
+    "startTime": 1778039116521
+  },
+  {
+    "protocol": "http",
+    "type": "pillar",
+    "label": "用于在线的IDE业务开发调试",
+    "address": "http://localhost:65244",
+    "startTime": 1778050184409
+  },
+  {
+    "protocol": "websocket",
+    "type": "pillar",
+    "label": "用于在线的IDE业务开发调试",
+    "address": "http://localhost:65244/socketjs",
+    "startTime": 1778050184409
+  },
+  {
+    "protocol": "http",
+    "type": "pillar",
+    "label": "用于在线的IDE业务开发调试",
+    "address": "http://localhost:52469",
+    "startTime": 1778050372817
+  },
+  {
+    "protocol": "websocket",
+    "type": "pillar",
+    "label": "用于在线的IDE业务开发调试",
+    "address": "http://localhost:52469/socketjs",
+    "startTime": 1778050372817
+  },
+  {
+    "protocol": "http",
+    "type": "pillar",
+    "label": "用于在线的IDE业务开发调试",
+    "address": "http://localhost:49708",
+    "startTime": 1778063659222
+  },
+  {
+    "protocol": "websocket",
+    "type": "pillar",
+    "label": "用于在线的IDE业务开发调试",
+    "address": "http://localhost:49708/socketjs",
+    "startTime": 1778063659222
+  },
+  {
+    "protocol": "http",
+    "type": "pillar",
+    "label": "用于在线的IDE业务开发调试",
+    "address": "http://localhost:52351",
+    "startTime": 1778120891918
+  },
+  {
+    "protocol": "websocket",
+    "type": "pillar",
+    "label": "用于在线的IDE业务开发调试",
+    "address": "http://localhost:52351/socketjs",
+    "startTime": 1778120891918
+  },
+  {
+    "protocol": "http",
+    "type": "pillar",
+    "label": "用于在线的IDE业务开发调试",
+    "address": "http://localhost:64868",
+    "startTime": 1778207103924
+  },
+  {
+    "protocol": "websocket",
+    "type": "pillar",
+    "label": "用于在线的IDE业务开发调试",
+    "address": "http://localhost:64868/socketjs",
+    "startTime": 1778207103924
+  },
+  {
+    "protocol": "http",
+    "type": "pillar",
+    "label": "用于在线的IDE业务开发调试",
+    "address": "http://localhost:63599",
+    "startTime": 1778557083947
+  },
+  {
+    "protocol": "websocket",
+    "type": "pillar",
+    "label": "用于在线的IDE业务开发调试",
+    "address": "http://localhost:63599/socketjs",
+    "startTime": 1778557083947
+  }
+]

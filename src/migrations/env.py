@@ -31,6 +31,7 @@ def import_models(package_name):
 
 
 import_models("app.models")
+import_models("app.core.db")
 target_metadata = Base.metadata
 
 

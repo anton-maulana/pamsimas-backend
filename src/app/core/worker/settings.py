@@ -3,19 +3,25 @@ from typing import cast
 
 from arq.cli import watch_reload
 from arq.connections import RedisSettings
+from arq.cron import cron
 from arq.typing import WorkerSettingsType
 from arq.worker import check_health, run_worker
 
 from ...core.config import settings
 from ...core.logger import logging  # noqa: F401
 from .functions import on_job_end, on_job_start, sample_background_task, shutdown, startup
+from .tasks.image_cleanup import cleanup_temporary_images
 
 REDIS_QUEUE_HOST = settings.REDIS_QUEUE_HOST
 REDIS_QUEUE_PORT = settings.REDIS_QUEUE_PORT
 
 
 class WorkerSettings:
-    functions = [sample_background_task]
+    functions = [sample_background_task, cleanup_temporary_images]
+    # Run cleanup task daily at 2 AM
+    cron_jobs = [
+        cron(cleanup_temporary_images, hour=2, minute=0, unique=True),
+    ]
     redis_settings = RedisSettings(host=REDIS_QUEUE_HOST, port=REDIS_QUEUE_PORT)
     on_startup = startup
     on_shutdown = shutdown

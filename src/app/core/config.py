@@ -1,5 +1,6 @@
 import os
 from enum import Enum
+from pathlib import Path
 
 from pydantic import SecretStr, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -175,6 +176,10 @@ class CORSSettings(BaseSettings):
     CORS_HEADERS: list[str] = ["*"]
 
 
+class FileUploadSettings(BaseSettings):
+    BASE_DIR: Path = Path(__file__).resolve().parent.parent.parent
+
+
 class Settings(
     AppSettings,
     SQLiteSettings,
@@ -190,6 +195,7 @@ class Settings(
     CRUDAdminSettings,
     EnvironmentSettings,
     CORSSettings,
+    FileUploadSettings,
     FileLoggerSettings,
     ConsoleLoggerSettings,
 ):
