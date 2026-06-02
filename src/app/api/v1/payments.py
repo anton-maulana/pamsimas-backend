@@ -61,8 +61,6 @@ async def get_payments(
         **filters,
     )
 
-    count = await crud_payment.count(db=db, **filters)
-
     return paginated_response(crud_data=payments, page=page, items_per_page=items_per_page)
 
 

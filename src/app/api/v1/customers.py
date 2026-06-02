@@ -3,7 +3,7 @@ from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, status
 from fastcrud import PaginatedListResponse, paginated_response
-from sqlalchemy import func, or_, select
+from sqlalchemy import func, not_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ...api.dependencies import get_current_user
@@ -36,7 +36,9 @@ async def create_customer(
             raise DuplicateValueException("Meter number already registered")
 
     if customer_in.meter_image_id is not None:
-        image = await crud_images.get(db=db, id=customer_in.meter_image_id, is_deleted=False, schema_to_select=ImageRead)
+        image = await crud_images.get(
+            db=db, id=customer_in.meter_image_id, is_deleted=False, schema_to_select=ImageRead
+        )
         if not image:
             raise NotFoundException("Image not found")
 
@@ -97,9 +99,9 @@ async def list_customers(
         result = await db.execute(stmt)
         rows = result.unique().scalars().all()
         data = [CustomerRead.model_validate(row).model_dump(by_alias=True) for row in rows]
-        
+
         # Count total for paginated response
-        count_stmt = select(Customer).where(Customer.is_deleted == False)
+        count_stmt = select(Customer).where(not_(Customer.is_deleted))
         if search:
             count_stmt = count_stmt.where(
                 or_(
@@ -118,12 +120,14 @@ async def list_customers(
             count_stmt = count_stmt.where(Customer.officer_id == officer_id)
         if meter_number is not None:
             count_stmt = count_stmt.where(Customer.meter_number == meter_number)
-            
+
         count_stmt = select(func.count()).select_from(count_stmt.subquery())
         total_count_result = await db.execute(count_stmt)
         total_count = total_count_result.scalar() or 0
-        
-        return paginated_response(crud_data={"data": data, "total_count": total_count}, page=page, items_per_page=items_per_page)
+
+        return paginated_response(
+            crud_data={"data": data, "total_count": total_count}, page=page, items_per_page=items_per_page
+        )
 
     # Without search – use FastCRUD
     filters: dict[str, Any] = {"is_deleted": False}
@@ -178,7 +182,9 @@ async def update_customer(
             raise DuplicateValueException("Meter number already registered")
 
     if customer_in.meter_image_id is not None:
-        image = await crud_images.get(db=db, id=customer_in.meter_image_id, is_deleted=False, schema_to_select=ImageRead)
+        image = await crud_images.get(
+            db=db, id=customer_in.meter_image_id, is_deleted=False, schema_to_select=ImageRead
+        )
         if not image:
             raise NotFoundException("Image not found")
 

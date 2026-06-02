@@ -61,8 +61,6 @@ async def get_bills(
         **filters,
     )
 
-    count = await crud_bill.count(db=db, **filters)
-
     return paginated_response(crud_data=bills, page=page, items_per_page=items_per_page)
 
 

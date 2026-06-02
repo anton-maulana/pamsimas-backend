@@ -9,5 +9,12 @@ from ..schemas.customer import (
     CustomerUpdateInternal,
 )
 
-CRUDCustomer = FastCRUD[Customer, CustomerCreateInternal, CustomerUpdate, CustomerUpdateInternal, CustomerDelete, CustomerRead]
+CRUDCustomer = FastCRUD[
+    Customer,
+    CustomerCreateInternal,
+    CustomerUpdate,
+    CustomerUpdateInternal,
+    CustomerDelete,
+    CustomerRead,
+]
 crud_customers = CRUDCustomer(Customer)
