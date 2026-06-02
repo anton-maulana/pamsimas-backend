@@ -2,14 +2,23 @@ from datetime import UTC, datetime
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, status
+from fastcrud import PaginatedListResponse, paginated_response
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from ...api.dependencies import get_current_superuser, get_current_user
+from ...api.dependencies import get_current_user
 from ...core.db.database import async_get_db
-from ...core.exceptions.http_exceptions import BadRequestException, DuplicateValueException, NotFoundException
+from ...core.exceptions.http_exceptions import DuplicateValueException, NotFoundException
 from ...crud.crud_customers import crud_customers
 from ...crud.crud_images import crud_images
-from ...schemas.customer import CustomerCreate, CustomerCreateInternal, CustomerRead, CustomerUpdate, CustomerUpdateInternal
+from ...models.customer import Customer
+from ...schemas.customer import (
+    CustomerCreate,
+    CustomerCreateInternal,
+    CustomerRead,
+    CustomerUpdate,
+    CustomerUpdateInternal,
+)
 from ...schemas.image import ImageRead, ImageStatus, ImageUpdateInternal
 
 router = APIRouter(tags=["customers"])
@@ -18,7 +27,7 @@ router = APIRouter(tags=["customers"])
 @router.post("", response_model=CustomerRead, status_code=201)
 async def create_customer(
     customer_in: CustomerCreate,
-    current_user: Annotated[dict, Depends(get_current_superuser)],
+    current_user: Annotated[dict, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(async_get_db)],
 ) -> dict[str, Any]:
     if customer_in.meter_number:
@@ -44,20 +53,84 @@ async def create_customer(
     return created
 
 
-@router.get("", response_model=list[CustomerRead])
+@router.get("", response_model=PaginatedListResponse[CustomerRead])
 async def list_customers(
     current_user: Annotated[dict, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(async_get_db)],
-    skip: int = 0,
-    limit: int = 100,
-    rt_rw: str | None = None,
+    page: int = 1,
+    items_per_page: int = 20,
+    search: str | None = None,
+    rt: str | None = None,
+    rw: str | None = None,
     status: str | None = None,
     officer_id: int | None = None,
     meter_number: str | None = None,
-) -> list[dict[str, Any]]:
-    filters = {"is_deleted": False}
-    if rt_rw is not None:
-        filters["rt_rw"] = rt_rw
+) -> dict[str, Any]:
+    offset = (page - 1) * items_per_page
+
+    # If there's a search query, use raw SQLAlchemy for LIKE filtering
+    if search:
+        search_term = f"%{search}%"
+        stmt = (
+            select(Customer)
+            .where(Customer.is_deleted == False)  # noqa: E712
+            .where(
+                or_(
+                    Customer.name.ilike(search_term),
+                    Customer.meter_number.ilike(search_term),
+                    Customer.address.ilike(search_term),
+                )
+            )
+        )
+        if rt is not None:
+            stmt = stmt.where(Customer.rt == rt)
+        if rw is not None:
+            stmt = stmt.where(Customer.rw == rw)
+        if status is not None:
+            stmt = stmt.where(Customer.status == status)
+        if officer_id is not None:
+            stmt = stmt.where(Customer.officer_id == officer_id)
+        if meter_number is not None:
+            stmt = stmt.where(Customer.meter_number == meter_number)
+
+        stmt = stmt.order_by(Customer.name).offset(offset).limit(items_per_page)
+        result = await db.execute(stmt)
+        rows = result.unique().scalars().all()
+        data = [CustomerRead.model_validate(row).model_dump(by_alias=True) for row in rows]
+        
+        # Count total for paginated response
+        count_stmt = select(Customer).where(Customer.is_deleted == False)
+        if search:
+            count_stmt = count_stmt.where(
+                or_(
+                    Customer.name.ilike(search_term),
+                    Customer.meter_number.ilike(search_term),
+                    Customer.address.ilike(search_term),
+                )
+            )
+        if rt is not None:
+            count_stmt = count_stmt.where(Customer.rt == rt)
+        if rw is not None:
+            count_stmt = count_stmt.where(Customer.rw == rw)
+        if status is not None:
+            count_stmt = count_stmt.where(Customer.status == status)
+        if officer_id is not None:
+            count_stmt = count_stmt.where(Customer.officer_id == officer_id)
+        if meter_number is not None:
+            count_stmt = count_stmt.where(Customer.meter_number == meter_number)
+            
+        count_stmt = select(func.count()).select_from(count_stmt.subquery())
+        total_count_result = await db.execute(count_stmt)
+        total_count = total_count_result.scalar() or 0
+        
+        return paginated_response(crud_data={"data": data, "total_count": total_count}, page=page, items_per_page=items_per_page)
+
+    # Without search – use FastCRUD
+    filters: dict[str, Any] = {"is_deleted": False}
+    if rt is not None:
+        filters["rt"] = rt
+    if rw is not None:
+        filters["rw"] = rw
     if status is not None:
         filters["status"] = status
     if officer_id is not None:
@@ -67,12 +140,13 @@ async def list_customers(
 
     result = await crud_customers.get_multi(
         db=db,
-        offset=skip,
-        limit=limit,
+        offset=offset,
+        limit=items_per_page,
         schema_to_select=CustomerRead,
-        **filters
+        sort_columns=["name"],
+        **filters,
     )
-    return result["data"]
+    return paginated_response(crud_data=result, page=page, items_per_page=items_per_page)
 
 
 @router.get("/{customer_id}", response_model=CustomerRead)
@@ -91,7 +165,7 @@ async def get_customer(
 async def update_customer(
     customer_id: int,
     customer_in: CustomerUpdate,
-    current_user: Annotated[dict, Depends(get_current_superuser)],
+    current_user: Annotated[dict, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(async_get_db)],
 ) -> dict[str, Any]:
     customer = await crud_customers.get(db=db, id=customer_id, is_deleted=False, schema_to_select=CustomerRead)
@@ -126,7 +200,7 @@ async def update_customer(
 @router.delete("/{customer_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_customer(
     customer_id: int,
-    current_user: Annotated[dict, Depends(get_current_superuser)],
+    current_user: Annotated[dict, Depends(get_current_user)],
     db: Annotated[AsyncSession, Depends(async_get_db)],
 ) -> None:
     customer = await crud_customers.get(db=db, id=customer_id, is_deleted=False)

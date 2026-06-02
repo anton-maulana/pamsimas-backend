@@ -47,8 +47,7 @@ async def create_meter_reading(
 
     # Mark image as used after successful creation
     if reading_in.image_id is not None:
-        from ...schemas.image import ImageUpdateInternal
-        from ...schemas.image import ImageStatus
+        from ...schemas.image import ImageStatus, ImageUpdateInternal
         await crud_images.update(
             db=db,
             object=ImageUpdateInternal(status=ImageStatus.USED, updated_at=datetime.now(UTC)),

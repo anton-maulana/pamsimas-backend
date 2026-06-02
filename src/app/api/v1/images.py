@@ -12,7 +12,7 @@ from ...core.config import settings
 from ...core.db.database import async_get_db
 from ...core.exceptions.http_exceptions import BadRequestException, NotFoundException
 from ...crud.crud_images import crud_images
-from ...schemas.image import ImageCreateInternal, ImageDelete, ImageRead, ImageUpdate, ImageUpdateInternal
+from ...schemas.image import ImageCreateInternal, ImageRead, ImageUpdate, ImageUpdateInternal
 
 router = APIRouter(tags=["images"])
 
@@ -28,21 +28,21 @@ async def upload_image(
     db: Annotated[AsyncSession, Depends(async_get_db)],
 ) -> dict[str, Any]:
     """Upload an image file. Status is set to 'temporary' by default."""
-    
+
     # Validate file
     if not file.filename:
         raise BadRequestException("Filename is required")
-    
+
     # Allowed MIME types
     allowed_mime_types = {"image/jpeg", "image/png", "image/gif", "image/webp", "image/bmp"}
     if file.content_type not in allowed_mime_types:
         raise BadRequestException(f"File type {file.content_type} is not allowed. Allowed types: {allowed_mime_types}")
-    
+
     # Max file size: 10MB
     MAX_FILE_SIZE = 10 * 1024 * 1024
     file_size = 0
     file_content = b""
-    
+
     # Read file content
     while True:
         chunk = await file.read(1024)
@@ -52,19 +52,19 @@ async def upload_image(
         if file_size > MAX_FILE_SIZE:
             raise BadRequestException(f"File size exceeds maximum allowed size of {MAX_FILE_SIZE / 1024 / 1024}MB")
         file_content += chunk
-    
+
     # Generate unique filename
     file_extension = Path(file.filename).suffix
     unique_filename = f"{uuid.uuid4()}{file_extension}"
     file_path = UPLOAD_DIR / unique_filename
-    
+
     # Save file
     try:
         with open(file_path, "wb") as f:
             f.write(file_content)
     except Exception as e:
         raise BadRequestException(f"Failed to save file: {str(e)}")
-    
+
     # Save to database
     relative_path = f"/uploads/images/{unique_filename}"
     image_create = ImageCreateInternal(
@@ -74,12 +74,12 @@ async def upload_image(
         mime_type=file.content_type,
         uploaded_by_user_id=current_user["id"],
     )
-    
+
     created_image = await crud_images.create(db=db, object=image_create, schema_to_select=ImageRead)
-    
+
     if created_image is None:
         raise BadRequestException("Failed to save image metadata to database")
-    
+
     return created_image
 
 
@@ -90,17 +90,17 @@ async def download_image(
     db: Annotated[AsyncSession, Depends(async_get_db)],
 ) -> FileResponse:
     """Download an image by its ID."""
-    
+
     image = await crud_images.get(db=db, id=image_id, is_deleted=False, schema_to_select=ImageRead)
     if not image:
         raise NotFoundException("Image not found")
-    
+
     # Construct full file path
     file_path = UPLOAD_DIR / Path(image["file_path"]).name
-    
+
     if not file_path.exists():
         raise NotFoundException("Image file not found on disk")
-    
+
     return FileResponse(
         path=file_path,
         filename=image["filename"],
@@ -115,11 +115,11 @@ async def get_image(
     db: Annotated[AsyncSession, Depends(async_get_db)],
 ) -> dict[str, Any]:
     """Get image metadata by ID."""
-    
+
     image = await crud_images.get(db=db, id=image_id, is_deleted=False, schema_to_select=ImageRead)
     if not image:
         raise NotFoundException("Image not found")
-    
+
     return image
 
 

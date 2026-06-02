@@ -3,12 +3,11 @@ from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from ..core.schemas import PersistentDeletion, TimestampSchema
-
 
 class CustomerBase(BaseModel):
     name: str
-    rt_rw: Annotated[str, Field(alias="rtRw")]
+    rt: str
+    rw: str
     address: str
     phone_number: Annotated[str, Field(alias="phoneNumber")]
 
@@ -26,7 +25,8 @@ class CustomerBase(BaseModel):
 class CustomerRead(BaseModel):
     id: int
     name: str
-    rt_rw: Annotated[str, Field(alias="rtRw")]
+    rt: str
+    rw: str
     address: str
     phone_number: Annotated[str, Field(alias="phoneNumber")]
 
@@ -40,7 +40,7 @@ class CustomerRead(BaseModel):
     latitude: float | None
     longitude: float | None
     created_at: datetime
-    
+
     model_config = ConfigDict(populate_by_name=True, from_attributes=True)
 
 
@@ -56,7 +56,8 @@ class CustomerUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
     name: str | None = None
-    rt_rw: Annotated[str | None, Field(default=None, alias="rtRw")]
+    rt: str | None = None
+    rw: str | None = None
     address: str | None = None
     phone_number: Annotated[str | None, Field(default=None, alias="phoneNumber")]
 

@@ -1,5 +1,5 @@
-from typing import Annotated, Any
 from datetime import UTC, datetime
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, Request
 from fastcrud import PaginatedListResponse, compute_offset, paginated_response
@@ -16,7 +16,14 @@ from ...crud.crud_tier import crud_tiers
 from ...crud.crud_users import crud_users
 from ...schemas.image import ImageRead, ImageStatus, ImageUpdateInternal
 from ...schemas.tier import TierRead
-from ...schemas.user import UserCreate, UserCreateInternal, UserRead, UserRole, UserTierUpdate, UserUpdate, UserPasswordReset
+from ...schemas.user import (
+    UserCreate,
+    UserCreateInternal,
+    UserPasswordReset,
+    UserRead,
+    UserRole,
+    UserUpdate,
+)
 
 router = APIRouter(tags=["users"])
 
@@ -59,6 +66,56 @@ async def read_users(
 
     response: dict[str, Any] = paginated_response(crud_data=users_data, page=page, items_per_page=items_per_page)
     return response
+
+
+@router.get(
+    "/user/officers", response_model=PaginatedListResponse[UserRead], dependencies=[Depends(get_current_superuser)]
+)
+async def read_officers(
+    request: Request,
+    db: Annotated[AsyncSession, Depends(async_get_db)],
+    page: int = 1,
+    items_per_page: int = 10,
+) -> dict:
+    """List all users with role=officer with pagination."""
+    officers_data = await crud_users.get_multi(
+        db=db,
+        offset=compute_offset(page, items_per_page),
+        limit=items_per_page,
+        is_deleted=False,
+        role=UserRole.officer,
+    )
+    response: dict[str, Any] = paginated_response(crud_data=officers_data, page=page, items_per_page=items_per_page)
+    return response
+
+
+@router.post("/user/officers", response_model=UserRead, status_code=201, dependencies=[Depends(get_current_superuser)])
+async def create_officer(
+    request: Request,
+    user: UserCreate,
+    db: Annotated[AsyncSession, Depends(async_get_db)],
+) -> dict[str, Any]:
+    """Create a new officer account. Superuser only."""
+    if await crud_users.exists(db=db, email=user.email):
+        raise DuplicateValueException("Email is already registered")
+
+    if await crud_users.exists(db=db, username=user.username):
+        raise DuplicateValueException("Username not available")
+
+    user_internal_dict = user.model_dump()
+
+    # We must explicitly pop password since it is not part of UserCreateInternal
+    password = user_internal_dict.pop("password")
+
+    user_internal_dict["hashed_password"] = get_password_hash(password=password)
+    user_internal = UserCreateInternal(**user_internal_dict)
+
+    created_user = await crud_users.create(db=db, object=user_internal, schema_to_select=UserRead)
+
+    if created_user is None:
+        raise NotFoundException("Failed to create officer")
+
+    return created_user
 
 
 @router.get("/user/me/", response_model=UserRead)
@@ -226,51 +283,74 @@ async def reset_user_password(
 # ─── Petugas (Officer) Endpoints ──────────────────────────────────────────────
 
 
-@router.get("/user/officers", response_model=PaginatedListResponse[UserRead], dependencies=[Depends(get_current_superuser)])
-async def read_officers(
+@router.get(
+    "/user/officers/{user_id}", response_model=UserRead, dependencies=[Depends(get_current_superuser)]
+)
+async def read_officer(
     request: Request,
-    db: Annotated[AsyncSession, Depends(async_get_db)],
-    page: int = 1,
-    items_per_page: int = 10,
-) -> dict:
-    """List all users with role=officer with pagination."""
-    officers_data = await crud_users.get_multi(
-        db=db,
-        offset=compute_offset(page, items_per_page),
-        limit=items_per_page,
-        is_deleted=False,
-        role=UserRole.officer,
-    )
-    response: dict[str, Any] = paginated_response(crud_data=officers_data, page=page, items_per_page=items_per_page)
-    return response
-
-
-@router.post("/user/officers", response_model=UserRead, status_code=201, dependencies=[Depends(get_current_superuser)])
-async def create_officer(
-    request: Request,
-    user: UserCreate,
+    user_id: int,
     db: Annotated[AsyncSession, Depends(async_get_db)],
 ) -> dict[str, Any]:
-    """Create a new officer account. Superuser only."""
-    if await crud_users.exists(db=db, email=user.email):
-        raise DuplicateValueException("Email is already registered")
+    """Get a specific officer by ID."""
+    db_user = await crud_users.get(db=db, id=user_id, is_deleted=False, schema_to_select=UserRead)
+    if db_user is None or db_user["role"] != UserRole.officer:
+        raise NotFoundException("Officer not found")
 
-    if await crud_users.exists(db=db, username=user.username):
-        raise DuplicateValueException("Username not available")
+    return db_user
 
-    user_internal_dict = user.model_dump()
-    user_internal_dict["hashed_password"] = get_password_hash(password=user_internal_dict.pop("password"))
-    user_internal = UserCreateInternal(**user_internal_dict)
-    created_user = await crud_users.create(db=db, object=user_internal, schema_to_select=UserRead)
+@router.patch("/user/officers/{user_id}", dependencies=[Depends(get_current_superuser)])
+async def patch_officer(
+    request: Request,
+    values: UserUpdate,
+    user_id: int,
+    db: Annotated[AsyncSession, Depends(async_get_db)],
+) -> dict[str, str]:
+    db_user = await crud_users.get(db=db, id=user_id, is_deleted=False)
+    if db_user is None or db_user["role"] != UserRole.officer:
+        raise NotFoundException("Officer not found")
 
-    if created_user is None:
-        raise NotFoundException("Failed to create officer")
+    if values.email is not None and values.email != db_user["email"]:
+        if await crud_users.exists(db=db, email=values.email):
+            raise DuplicateValueException("Email is already registered")
 
-    return created_user
+    if values.username is not None and values.username != db_user["username"]:
+        if await crud_users.exists(db=db, username=values.username):
+            raise DuplicateValueException("Username not available")
 
+    await crud_users.update(db=db, object=values, id=user_id)
+    return {"message": "Officer updated"}
+
+@router.delete("/user/officers/{user_id}", dependencies=[Depends(get_current_superuser)])
+async def erase_officer(
+    request: Request,
+    user_id: int,
+    db: Annotated[AsyncSession, Depends(async_get_db)],
+) -> dict[str, str]:
+    db_user = await crud_users.get(db=db, id=user_id, is_deleted=False)
+    if not db_user or db_user["role"] != UserRole.officer:
+        raise NotFoundException("Officer not found")
+
+    await crud_users.delete(db=db, id=user_id)
+    return {"message": "Officer deleted"}
+
+@router.patch("/user/officers/{user_id}/reset-password", dependencies=[Depends(get_current_superuser)])
+async def reset_officer_password(
+    request: Request,
+    user_id: int,
+    values: UserPasswordReset,
+    db: Annotated[AsyncSession, Depends(async_get_db)],
+) -> dict[str, str]:
+    """Reset an officer's password. Superuser only."""
+    db_user = await crud_users.get(db=db, id=user_id, schema_to_select=UserRead)
+    if db_user is None or db_user["role"] != UserRole.officer:
+        raise NotFoundException("Officer not found")
+
+    hashed_password = get_password_hash(password=values.new_password)
+    await crud_users.update(db=db, object={"hashed_password": hashed_password}, id=user_id)
+    return {"message": f"Password for officer {db_user['name']} has been reset"}
 
 @router.get(
-    "/user/{user_id}/customers/count",
+    "/user/officers/{user_id}/customers/count",
     dependencies=[Depends(get_current_superuser)],
 )
 async def read_officer_customer_count(

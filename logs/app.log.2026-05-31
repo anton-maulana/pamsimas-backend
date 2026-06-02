@@ -1,0 +1,9 @@
+{"event": "Started server process [4788]", "logger": "uvicorn.error", "level": "info", "timestamp": "2026-05-31T00:49:06.065923Z"}
+{"event": "Waiting for application startup.", "logger": "uvicorn.error", "level": "info", "timestamp": "2026-05-31T00:49:06.068194Z"}
+{"event": "Initializing admin database tables...", "logger": "crudadmin.core.db", "level": "info", "timestamp": "2026-05-31T00:49:06.718884Z"}
+{"event": "Creating table: admin_user", "logger": "crudadmin.core.db", "level": "info", "timestamp": "2026-05-31T00:49:06.750467Z"}
+{"event": "Creating table: admin_session", "logger": "crudadmin.core.db", "level": "info", "timestamp": "2026-05-31T00:49:06.766069Z"}
+{"event": "Creating table: admin_event_log", "logger": "crudadmin.core.db", "level": "info", "timestamp": "2026-05-31T00:49:06.774606Z"}
+{"event": "Creating table: admin_audit_log", "logger": "crudadmin.core.db", "level": "info", "timestamp": "2026-05-31T00:49:06.784465Z"}
+{"event": "Admin database tables created successfully", "logger": "crudadmin.core.db", "level": "info", "timestamp": "2026-05-31T00:49:06.795514Z"}
+{"event": "Application startup complete.", "logger": "uvicorn.error", "level": "info", "timestamp": "2026-05-31T00:49:06.814212Z"}

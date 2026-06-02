@@ -23,17 +23,20 @@ class CryptSettings(BaseSettings):
 
 
 class FileLoggerSettings(BaseSettings):
+    FILE_LOG_ENABLED: bool = True
     FILE_LOG_MAX_BYTES: int = 10 * 1024 * 1024
-    FILE_LOG_BACKUP_COUNT: int = 5
+    FILE_LOG_BACKUP_COUNT: int = 30 # Kept up to 30 days
     FILE_LOG_FORMAT_JSON: bool = True
     FILE_LOG_LEVEL: str = "INFO"
-
     # Include request ID, path, method, client host, and status code in the file log
     FILE_LOG_INCLUDE_REQUEST_ID: bool = True
     FILE_LOG_INCLUDE_PATH: bool = True
     FILE_LOG_INCLUDE_METHOD: bool = True
     FILE_LOG_INCLUDE_CLIENT_HOST: bool = True
     FILE_LOG_INCLUDE_STATUS_CODE: bool = True
+    # Include req/resp body
+    FILE_LOG_INCLUDE_REQ_BODY: bool = True
+    FILE_LOG_INCLUDE_RESP_BODY: bool = True
 
 
 class ConsoleLoggerSettings(BaseSettings):

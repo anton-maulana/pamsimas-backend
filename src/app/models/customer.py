@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 
-from sqlalchemy import DateTime, ForeignKey, String, Float
+from sqlalchemy import DateTime, Float, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..core.db.database import Base
@@ -11,10 +11,11 @@ class Customer(Base):
 
     id: Mapped[int] = mapped_column(autoincrement=True, primary_key=True, init=False)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
-    rt_rw: Mapped[str] = mapped_column(String(50), nullable=False)
+    rt: Mapped[str] = mapped_column(String(5), nullable=False)
+    rw: Mapped[str] = mapped_column(String(5), nullable=False)
     address: Mapped[str] = mapped_column(String(255), nullable=False)
     phone_number: Mapped[str] = mapped_column(String(20), nullable=False)
-    
+
     meter_number: Mapped[str] = mapped_column(String(50), unique=True, index=True, nullable=False)
 
     officer_id: Mapped[int | None] = mapped_column(ForeignKey("user.id"), index=True, default=None)

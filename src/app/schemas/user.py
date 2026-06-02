@@ -18,7 +18,6 @@ class UserBase(BaseModel):
     email: Annotated[EmailStr, Field(examples=["user.userson@example.com"])]
     phone: Annotated[str | None, Field(max_length=20, default=None, examples=["08123456789"])]
     address: Annotated[str | None, Field(max_length=200, default=None, examples=["Jl. Mawar No. 12"])]
-    status: Annotated[bool | None, Field(default=None, examples=[True])]
     role: Annotated[UserRole, Field(default=UserRole.officer, examples=["officer"])]
 
 

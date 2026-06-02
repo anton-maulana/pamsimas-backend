@@ -2,7 +2,6 @@
 
 import logging
 import os
-from logging.handlers import RotatingFileHandler
 
 import structlog
 from structlog.dev import ConsoleRenderer
@@ -35,6 +34,10 @@ def file_log_filter_processors(_, __, event_dict: EventDict) -> EventDict:
         event_dict.pop("client_host", None)
     if not settings.FILE_LOG_INCLUDE_STATUS_CODE:
         event_dict.pop("status_code", None)
+    if not settings.FILE_LOG_INCLUDE_REQ_BODY:
+        event_dict.pop("request_body", None)
+    if not settings.FILE_LOG_INCLUDE_RESP_BODY:
+        event_dict.pop("response_body", None)
     return event_dict
 
 
@@ -90,17 +93,20 @@ def build_formatter(*, json_output: bool, pre_chain: list[Processor]) -> structl
 
 
 # Setup log directory
-LOG_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "logs")
+LOG_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), "logs")
 os.makedirs(LOG_DIR, exist_ok=True)
 
+# File handler configuration (Time-based rotation: by date)
+from logging.handlers import TimedRotatingFileHandler
 
-# File handler configuration
-file_handler = RotatingFileHandler(
+file_handler = TimedRotatingFileHandler(
     filename=os.path.join(LOG_DIR, "app.log"),
-    maxBytes=settings.FILE_LOG_MAX_BYTES,
+    when="midnight",
+    interval=1,
     backupCount=settings.FILE_LOG_BACKUP_COUNT,
 )
 file_handler.setLevel(settings.FILE_LOG_LEVEL)
+file_handler.suffix = "%Y-%m-%d"
 file_handler.setFormatter(
     build_formatter(
         json_output=settings.FILE_LOG_FORMAT_JSON, pre_chain=SHARED_PROCESSORS + [file_log_filter_processors]
@@ -121,7 +127,9 @@ console_handler.setFormatter(
 root_logger = logging.getLogger()
 root_logger.setLevel(logging.INFO)
 root_logger.handlers.clear()  # avoid duplicate logs
-root_logger.addHandler(file_handler)
+
+if settings.FILE_LOG_ENABLED:
+    root_logger.addHandler(file_handler)
 root_logger.addHandler(console_handler)
 
 # Uvicorn logger integration

@@ -8,7 +8,7 @@ from ...api.dependencies import get_current_user
 from ...core.db.database import async_get_db
 from ...core.exceptions.http_exceptions import NotFoundException
 from ...crud.crud_bill import crud_bill
-from ...crud.crud_customer import crud_customer
+from ...crud.crud_customers import crud_customers
 from ...schemas.bill import BillCreate, BillRead, BillUpdate
 
 router = APIRouter(tags=["bills"], prefix="/bills")
@@ -22,7 +22,7 @@ async def create_bill(
 ) -> dict[str, Any]:
     """Create a new bill"""
     # Verify customer exists
-    customer = await crud_customer.get(db=db, id=bill.customer_id, is_deleted=False)
+    customer = await crud_customers.get(db=db, id=bill.customer_id, is_deleted=False)
     if customer is None:
         raise NotFoundException("Customer not found")
 
