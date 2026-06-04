@@ -2,6 +2,7 @@ from .bill import Bill
 from .customer import Customer
 from .image import Image
 from .meter_reading import MeterReading
+from .officer_area import OfficerArea
 from .payment import Payment
 from .post import Post
 from .rate_limit import RateLimit

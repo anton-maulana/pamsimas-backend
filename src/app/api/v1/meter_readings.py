@@ -45,6 +45,15 @@ async def create_meter_reading(
     internal = MeterReadingCreateInternal(**reading_in.model_dump())
     created = await crud_meter_readings.create(db=db, object=internal, schema_to_select=MeterReadingRead)
 
+    # Update customer's current meter reading
+    from ...schemas.customer import CustomerUpdateInternal
+    await crud_customers.update(
+        db=db,
+        object=CustomerUpdateInternal(meter_number=str(reading_in.current_meter), updated_at=datetime.now(UTC)),
+        id=reading_in.customer_id,
+        is_deleted=False,
+    )
+
     # Mark image as used after successful creation
     if reading_in.image_id is not None:
         from ...schemas.image import ImageStatus, ImageUpdateInternal

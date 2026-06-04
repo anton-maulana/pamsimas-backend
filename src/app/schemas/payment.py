@@ -21,6 +21,16 @@ class PaymentCreate(PaymentBase):
     pass
 
 
+class CumulativePaymentCreate(BaseModel):
+    """Schema for cumulative payments across multiple bills"""
+
+    customer_id: int
+    amount_paid: float = Field(..., gt=0)
+    payment_method: str = Field(..., min_length=1, max_length=50)
+    reference_number: str | None = Field(None, max_length=100)
+    notes: str | None = None
+
+
 class PaymentUpdate(BaseModel):
     """Schema for updating a payment"""
 

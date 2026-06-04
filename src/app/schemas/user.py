@@ -28,24 +28,36 @@ class User(TimestampSchema, UserBase, UUIDSchema, PersistentDeletion):
     tier_id: int | None = None
 
 
+from .officer_area import OfficerAreaBase, OfficerAreaRead
+
 class UserRead(BaseModel):
     id: int
 
     name: Annotated[str, Field(min_length=2, max_length=30, examples=["User Userson"])]
     username: Annotated[str, Field(min_length=2, max_length=20, pattern=r"^[a-z0-9]+$", examples=["userson"])]
     email: Annotated[EmailStr, Field(examples=["user.userson@example.com"])]
-    phone: str | None
-    address: str | None
+    phone: str | None = None
+    address: str | None = None
     role: UserRole
     profile_image_url: str
-    profile_image_id: int | None
-    tier_id: int | None
+    profile_image_id: int | None = None
+    tier_id: int | None = None
+    areas: list[OfficerAreaRead] = []
+
+    class Config:
+        from_attributes = True
+
+
+
+
 
 
 class UserCreate(UserBase):
     model_config = ConfigDict(extra="forbid")
 
     password: Annotated[str, Field(pattern=r"^.{8,}|[0-9]+|[A-Z]+|[a-z]+|[^a-zA-Z0-9]+$", examples=["Str1ngst!"])]
+    areas: list[OfficerAreaBase] = []
+
 
 
 class UserCreateInternal(UserBase):
@@ -70,6 +82,8 @@ class UserUpdate(BaseModel):
         ),
     ]
     profile_image_id: Annotated[int | None, Field(default=None, examples=[1])]
+    areas: list[OfficerAreaBase] | None = None
+
 
 
 class UserUpdateInternal(UserUpdate):

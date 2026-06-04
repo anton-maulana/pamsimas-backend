@@ -4,10 +4,11 @@ from datetime import UTC, datetime
 
 from sqlalchemy import DateTime, Enum, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from uuid6 import uuid7
 
 from ..core.db.database import Base
+from .officer_area import OfficerArea  # noqa: F401 – must be imported before configure_mappers()
 
 
 class UserRole(str, enum.Enum):
@@ -47,3 +48,6 @@ class User(Base):
     is_superuser: Mapped[bool] = mapped_column(default=False)
 
     tier_id: Mapped[int | None] = mapped_column(ForeignKey("tier.id"), index=True, default=None, init=False)
+
+    areas: Mapped[list["OfficerArea"]] = relationship("OfficerArea", backref="user", cascade="all, delete-orphan", init=False)
+
