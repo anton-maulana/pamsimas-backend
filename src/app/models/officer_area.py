@@ -9,5 +9,5 @@ class OfficerArea(Base):
 
     id: Mapped[int] = mapped_column(autoincrement=True, primary_key=True, init=False)
     user_id: Mapped[int] = mapped_column(ForeignKey("user.id", ondelete="CASCADE"), index=True)
-    rt: Mapped[str] = mapped_column(String(10), nullable=False)
-    rw: Mapped[str] = mapped_column(String(10), nullable=False)
+    rt: Mapped[int] = mapped_column(Integer, nullable=False)
+    rw: Mapped[int] = mapped_column(Integer, nullable=False)

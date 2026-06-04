@@ -120,29 +120,49 @@ async def get_bills(
     status: str | None = None,
     billing_month: int | None = None,
     billing_year: int | None = None,
+    rt: str | None = None,
+    rw: str | None = None,
 ) -> dict[str, Any]:
     """Get bills with optional filtering"""
     offset = compute_offset(page, items_per_page)
 
-    filters = {}
+    # Base query for bills
+    stmt = select(Bill).join(Customer, Bill.customer_id == Customer.id)
+
+    # Apply filters
     if customer_id:
-        filters["customer_id"] = customer_id
+        stmt = stmt.where(Bill.customer_id == customer_id)
     if status:
-        filters["status"] = status
+        stmt = stmt.where(Bill.status == status)
     if billing_month:
-        filters["billing_month"] = billing_month
+        stmt = stmt.where(Bill.billing_month == billing_month)
     if billing_year:
-        filters["billing_year"] = billing_year
+        stmt = stmt.where(Bill.billing_year == billing_year)
+    
+    # Parse and apply multiple RT/RW filters
+    if rt:
+        rt_list = [int(x) for x in rt.split(",")]
+        stmt = stmt.where(Customer.rt.in_(rt_list))
+    if rw:
+        rw_list = [int(x) for x in rw.split(",")]
+        stmt = stmt.where(Customer.rw.in_(rw_list))
 
-    bills = await crud_bill.get_multi(
-        db=db,
-        offset=offset,
-        limit=items_per_page,
-        schema_to_select=BillRead,
-        **filters,
+    # Count total (before pagination)
+    count_stmt = select(func.count()).select_from(stmt.subquery())
+    total_count_result = await db.execute(count_stmt)
+    total_count = total_count_result.scalar() or 0
+
+    # Apply pagination and sorting
+    stmt = stmt.order_by(Bill.created_at.desc()).offset(offset).limit(items_per_page)
+    result = await db.execute(stmt)
+    rows = result.scalars().all()
+    
+    # Use schema to validate and format
+    data = [BillRead.model_validate(row) for row in rows]
+
+    return paginated_response(
+        crud_data={"data": data, "total_count": total_count}, page=page, items_per_page=items_per_page
     )
-
-    return paginated_response(crud_data=bills, page=page, items_per_page=items_per_page)
 
 
 @router.get("/{bill_id}", response_model=BillRead)

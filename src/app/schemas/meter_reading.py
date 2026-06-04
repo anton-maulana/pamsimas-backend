@@ -7,8 +7,8 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 class MeterReadingBase(BaseModel):
     customer_id: Annotated[int, Field(gt=0, examples=[1])]
     reading_date: Annotated[date, Field(examples=["2026-05-06"])]
-    current_meter: Annotated[int, Field(ge=0, examples=[1250])]
-    previous_meter: Annotated[int | None, Field(ge=0, default=None, examples=[1100])]
+    current_meter: Annotated[float, Field(ge=0, examples=[1250.5])]
+    previous_meter: Annotated[float | None, Field(ge=0, default=None, examples=[1100.2])]
     image_id: Annotated[int | None, Field(default=None, examples=[1])]
     latitude: Annotated[float | None, Field(default=None, examples=[-6.2088])]
     longitude: Annotated[float | None, Field(default=None, examples=[106.8456])]
@@ -18,9 +18,9 @@ class MeterReadingRead(BaseModel):
     id: int
     customer_id: int
     reading_date: date
-    current_meter: int
-    previous_meter: int | None
-    usage: int | None
+    current_meter: float
+    previous_meter: float | None
+    usage: float | None
     image_id: int | None
     latitude: float | None
     longitude: float | None
@@ -45,8 +45,8 @@ class MeterReadingUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     reading_date: Annotated[date | None, Field(default=None)]
-    current_meter: Annotated[int | None, Field(ge=0, default=None)]
-    previous_meter: Annotated[int | None, Field(ge=0, default=None)]
+    current_meter: Annotated[float | None, Field(ge=0, default=None)]
+    previous_meter: Annotated[float | None, Field(ge=0, default=None)]
     image_id: Annotated[int | None, Field(default=None)]
     latitude: Annotated[float | None, Field(default=None)]
     longitude: Annotated[float | None, Field(default=None)]

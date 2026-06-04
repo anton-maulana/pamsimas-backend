@@ -10,9 +10,9 @@ class BillBase(BaseModel):
     customer_id: int
     billing_month: int = Field(..., ge=1, le=12)
     billing_year: int = Field(..., ge=2000, le=2100)
-    meter_start: int = Field(..., ge=0)
-    meter_end: int = Field(..., ge=0)
-    usage: int = Field(..., ge=0)
+    meter_start: float = Field(..., ge=0)
+    meter_end: float = Field(..., ge=0)
+    usage: float = Field(..., ge=0)
     amount: float = Field(..., gt=0)
     status: str = Field(default="unpaid")
     notes: str | None = None
@@ -27,8 +27,8 @@ class BillCreate(BillBase):
 class BillUpdate(BaseModel):
     """Schema for updating a bill"""
 
-    meter_end: int | None = None
-    usage: int | None = None
+    meter_end: float | None = None
+    usage: float | None = None
     amount: float | None = None
     status: str | None = None
     notes: str | None = None

@@ -88,8 +88,8 @@ async def read_officers(
     db: Annotated[AsyncSession, Depends(async_get_db)],
     page: int = 1,
     items_per_page: int = 10,
-    rt: str | None = None,
-    rw: str | None = None,
+    rt: int | None = None,
+    rw: int | None = None,
 ) -> dict:
     """List all users with role=officer with pagination. Supports filtering by RT/RW."""
     from ...models.officer_area import OfficerArea
@@ -217,6 +217,10 @@ async def read_officer_customer_count(
     db: Annotated[AsyncSession, Depends(async_get_db)],
 ) -> dict[str, Any]:
     """Return the number of customers assigned to a specific officer."""
+    from ...models.customer import Customer
+    from sqlalchemy import select, func
+
+    # Check if officer exists
     db_user = await crud_users.get(db=db, id=user_id, schema_to_select=UserRead)
     if db_user is None:
         raise NotFoundException("Officer not found")
@@ -224,8 +228,12 @@ async def read_officer_customer_count(
     if db_user["role"] != UserRole.officer:
         raise ForbiddenException("User is not an officer")
 
-    customers_data = await crud_customers.get_multi(db=db, officer_id=user_id, is_deleted=False)
-    return {"user_id": user_id, "customer_count": customers_data["total_count"]}
+    # Use a direct count query to avoid type conversion issues with get_multi
+    count_stmt = select(func.count()).select_from(Customer).where(Customer.officer_id == user_id, Customer.is_deleted == False)
+    result = await db.execute(count_stmt)
+    total_count = result.scalar() or 0
+
+    return {"user_id": user_id, "customer_count": total_count}
 
 
 @router.patch("/user/officers/{user_id}", dependencies=[Depends(get_current_superuser)])

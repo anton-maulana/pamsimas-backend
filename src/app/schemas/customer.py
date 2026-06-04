@@ -6,12 +6,12 @@ from pydantic import BaseModel, ConfigDict, Field
 
 class CustomerBase(BaseModel):
     name: str
-    rt: str
-    rw: str
+    rt: int
+    rw: int
     address: str
     phone_number: Annotated[str, Field(alias="phoneNumber")]
 
-    meter_number: Annotated[str, Field(alias="meterNumber")]
+    meter_number: Annotated[float, Field(alias="meterNumber")]
     meter_image_id: Annotated[int | None, Field(default=None, alias="meterImageId")]
 
     officer_id: Annotated[int | None, Field(default=None, alias="officerId")]
@@ -25,12 +25,12 @@ class CustomerBase(BaseModel):
 class CustomerRead(BaseModel):
     id: int
     name: str
-    rt: str
-    rw: str
+    rt: int
+    rw: int
     address: str
     phone_number: Annotated[str, Field(alias="phoneNumber")]
 
-    meter_number: Annotated[str, Field(alias="meterNumber")]
+    meter_number: Annotated[float, Field(alias="meterNumber")]
     meter_image_id: Annotated[int | None, Field(alias="meterImageId")]
 
     officer_id: Annotated[int | None, Field(alias="officerId")]
@@ -56,12 +56,12 @@ class CustomerUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
 
     name: str | None = None
-    rt: str | None = None
-    rw: str | None = None
+    rt: int | None = None
+    rw: int | None = None
     address: str | None = None
     phone_number: Annotated[str | None, Field(default=None, alias="phoneNumber")]
 
-    meter_number: Annotated[str | None, Field(default=None, alias="meterNumber")]
+    meter_number: Annotated[float | None, Field(default=None, alias="meterNumber")]
     meter_image_id: Annotated[int | None, Field(default=None, alias="meterImageId")]
 
     officer_id: Annotated[int | None, Field(default=None, alias="officerId")]

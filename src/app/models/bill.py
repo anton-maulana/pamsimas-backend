@@ -1,7 +1,7 @@
 import uuid as uuid_pkg
 from datetime import UTC, datetime
 
-from sqlalchemy import DateTime, ForeignKey, Integer, Numeric, String
+from sqlalchemy import DateTime, Float, ForeignKey, Integer, Numeric, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 from uuid6 import uuid7
@@ -24,9 +24,9 @@ class Bill(Base):
     billing_year: Mapped[int] = mapped_column(Integer)  # Year (e.g., 2026)
 
     # Meter readings
-    meter_start: Mapped[int] = mapped_column(Integer)  # Beginning meter reading (m³)
-    meter_end: Mapped[int] = mapped_column(Integer)  # End meter reading (m³)
-    usage: Mapped[int] = mapped_column(Integer)  # Calculated usage (meter_end - meter_start)
+    meter_start: Mapped[float] = mapped_column(Float)  # Beginning meter reading (m³)
+    meter_end: Mapped[float] = mapped_column(Float)  # End meter reading (m³)
+    usage: Mapped[float] = mapped_column(Float)  # Calculated usage (meter_end - meter_start)
 
     # Billing amount
     amount: Mapped[float] = mapped_column(Numeric(10, 2))  # Bill amount in currency units
